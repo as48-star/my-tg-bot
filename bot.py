@@ -7,10 +7,10 @@ from telethon.tl.functions.channels import GetParticipantRequest
 from telethon.errors import UserNotParticipantError
 
 # --- Aapki Details ---
-API_ID = 21727773 
+API_ID = 22319684
 API_HASH = "17b2b31671daa77fd64c807b397d0dfc"
 BOT_TOKEN = "8442918548:AAFbuDOJWk90bV-WHjMZWWGp5PfY3AuQ63o"
-ADMIN_ID = 8035280106 
+ADMIN_ID = 8035280106
 CHANNEL_USERNAME = "backupour6" 
 
 # Client setup bina turant start kiye
