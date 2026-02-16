@@ -1,54 +1,67 @@
 import asyncio
 import os
 import re
-import json
-from telethon import TelegramClient, events, Button
-from telethon.tl.functions.channels import GetParticipantRequest
-from telethon.errors import UserNotParticipantError
-from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from telethon import TelegramClient, events
 
-# --- Aapki Details ---
+# --- Details (Same rakhein) ---
 API_ID = 22319684
 API_HASH = "17b2b31671daa77fd64c807b397d0dfc"
 BOT_TOKEN = "8442918548:AAFbuDOJWk90bV-WHjMZWWGp5PfY3AuQ63o"
 ADMIN_ID = 8035280106
 CHANNEL_USERNAME = "backupour6" 
 
+
 client = TelegramClient("bot_session", API_ID, API_HASH)
 
-# --- FREE WEB SERVER FOR RENDER ---
+# Render Fix Web Server
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b'Bot is Running Successfully!')
+        self.wfile.write(b'Bot is Live and Running!')
 
 def run_web_server():
-    # Render hamesha ek PORT variable deta hai free users ko
     port = int(os.environ.get("PORT", 10000))
     server = HTTPServer(('0.0.0.0', port), SimpleHTTPRequestHandler)
-    print(f"🌍 Web Server started on port {port}")
     server.serve_forever()
-
-# --- Bot Logic ---
-@client.on(events.NewMessage(pattern=r"(?i)^/start"))
-async def start_handler(event):
-    await event.reply("👋 **Bot Online Hai!**\nBas link bhejein.")
 
 @client.on(events.NewMessage(pattern=r"(?i)^https?://t\.me/"))
 async def handler(event):
-    # Aapka purana sequence fetching logic yahan kaam karega
-    await event.reply("⏳ **Processing...**")
+    text = event.text.strip()
+    m = re.search(r"t\.me/(?:c/)?([a-zA-Z0-9_]+)/(\d+)", text)
+    if not m: return
 
-async def main():
+    status = await event.reply("⏳ **Fetching... Please wait.**")
+    
+    try:
+        chat_id = int("-100" + m.group(1)) if "t.me/c/" in text else m.group(1)
+        start_id = int(m.group(2))
+
+        # Sirf 5 files ek baar mein check karein (RAM bachaane ke liye)
+        for i in range(10):
+            msg = await client.get_messages(chat_id, ids=start_id + i)
+            if not msg: continue
+            
+            if msg.media:
+                await client.send_file(event.chat_id, msg.media, caption=msg.text or "")
+            elif msg.text:
+                await client.send_message(event.chat_id, msg.text)
+            
+            await asyncio.sleep(2) 
+
+        await status.edit("✅ **Kaam ho gaya!**")
+    except Exception as e:
+        print(f"Error: {e}")
+        await status.edit(f"❌ **Dikkat aayi:** {str(e)}")
+
+async def start_bot():
     await client.start(bot_token=BOT_TOKEN)
-    print("🚀 Bot Started!")
+    print("🚀 Bot is Online!")
     await client.run_until_disconnected()
 
 if __name__ == '__main__':
-    # Web server ko background mein chalana (Free fix for Render)
     threading.Thread(target=run_web_server, daemon=True).start()
-    # Bot start karna
-    asyncio.run(main())
+    asyncio.run(start_bot())
     
